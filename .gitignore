@@ -1,0 +1,6 @@
+/Source/.idea/*
+/Source/appsettings.Development.json
+/Source/bin/*
+/Source/idata/*
+/Source/obj/*
+/Deploy/docker-compose.production.yml
