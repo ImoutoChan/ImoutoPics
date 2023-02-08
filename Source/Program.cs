@@ -15,19 +15,6 @@ public static class Program
 
     private static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
-            .ConfigureAppConfiguration((context, builder) =>
-            {
-                var azureAppConfiguration = builder.Build().GetConnectionString("AzureConfig");
-
-                if (context.HostingEnvironment.IsProduction())
-                    builder.AddAzureAppConfiguration(x => x
-                        .Connect(azureAppConfiguration)
-                        .Select("*", Environments.Production));
-
-                builder
-                    .AddJsonFile("appsettings.Cache.json.backup", true)
-                    .AddJsonFile("appsettings.Cache.json", true);
-            })
             .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>())
             .ConfigureSerilog()
             .ConfigureServices(x => x.AddHostedService<TelegramHostedService>())
