@@ -28,6 +28,12 @@ public class UploadController : ControllerBase
             return;
         }
         
+        if (!files.Any())
+        {
+            _logger.LogWarning("Empty files");
+            return;
+        }
+        
         foreach (var file in files)
         {
             try
