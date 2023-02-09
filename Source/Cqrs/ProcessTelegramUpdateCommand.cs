@@ -1,4 +1,5 @@
 using ImoutoPicsBot.Configuration;
+using ImoutoPicsBot.Data;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -10,11 +11,19 @@ internal class ProcessTelegramUpdateCommandHandler : IRequestHandler<ProcessTele
 {
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly int _moderator;
+    private readonly IMediaRepository _mediaRepository;
+    private readonly IPostInfoRepository _postInfoRepository;
 
-    public ProcessTelegramUpdateCommandHandler(ITelegramBotClient telegramBotClient, IConfiguration configuration)
+    public ProcessTelegramUpdateCommandHandler(
+        ITelegramBotClient telegramBotClient,
+        IConfiguration configuration,
+        IMediaRepository mediaRepository,
+        IPostInfoRepository postInfoRepository)
     {
         _moderator = configuration.GetRequiredValue<int>("ModeratorId");
         _telegramBotClient = telegramBotClient;
+        _mediaRepository = mediaRepository;
+        _postInfoRepository = postInfoRepository;
     }
 
     public async Task<Unit> Handle(ProcessTelegramUpdateCommand command, CancellationToken ct)
@@ -29,7 +38,17 @@ internal class ProcessTelegramUpdateCommandHandler : IRequestHandler<ProcessTele
             if (!allowed)
                 return Unit.Value;
 
-            await _telegramBotClient.SendTextMessageAsync(message.Chat, "Мяу!", cancellationToken: ct);
+            var count = _mediaRepository.GetNotPostedCount();
+            var lastPostOn = _postInfoRepository.GetLastPostOn();
+
+            await _telegramBotClient.SendTextMessageAsync(
+                message.Chat, 
+                $"""
+                Кира кира!
+                Последний пост был в {lastPostOn.ToOffset(TimeSpan.FromHours(4))}
+                Накопилось {count} файлов
+                """,
+                cancellationToken: ct);
         }
 
         return Unit.Value;
