@@ -1,3 +1,4 @@
+using ImoutoPicsBot.Configuration;
 using ImoutoPicsBot.Data;
 using ImoutoPicsBot.Data.Models;
 using ImoutoPicsBot.ImageProcessing;
@@ -12,7 +13,7 @@ internal class TryPostHandler : IRequestHandler<TryPost>
     private readonly int _postEveryHours;
     private readonly int _niceHoursStart;
     private readonly int _niceHoursEnd;
-    private readonly long _targetChat;
+    private readonly string _targetChat;
     
     private readonly IMediaRepository _mediaRepository;
     private readonly IPostInfoRepository _postInfoRepository;
@@ -36,7 +37,7 @@ internal class TryPostHandler : IRequestHandler<TryPost>
         _postEveryHours = configuration.GetValue<int>("PostEveryHours");
         _niceHoursStart = configuration.GetValue<int>("NiceHoursStart");
         _niceHoursEnd = configuration.GetValue<int>("NiceHoursEnd");
-        _targetChat = configuration.GetValue<long>("TargetChat");
+        _targetChat = configuration.GetRequiredValue<string>("TargetChat");
     }
 
     public async Task<Unit> Handle(TryPost command, CancellationToken ct)
@@ -79,7 +80,10 @@ internal class TryPostHandler : IRequestHandler<TryPost>
             .OfType<IAlbumInputMedia>()
             .ToList();
 
-        var messages = await _telegramBotClient.SendMediaGroupAsync(_targetChat, toPostMediaData, cancellationToken: ct);
+        var messages = await _telegramBotClient.SendMediaGroupAsync(
+            _targetChat, 
+            toPostMediaData, 
+            cancellationToken: ct);
 
         foreach (var albumInputMedia in toPostMediaData) 
             await albumInputMedia.Media.Content!.DisposeAsync();

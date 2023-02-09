@@ -13,6 +13,10 @@ internal class FileStorageRepository : IFileStorageRepository
     public IReadOnlyCollection<string> GetStored()
     {
         var dir = new DirectoryInfo(Path.Combine("idata", "files"));
+        
+        if (!dir.Exists)
+            dir.Create();
+        
         return dir.GetFiles().Select(x => x.FullName).ToList();
     }
 
