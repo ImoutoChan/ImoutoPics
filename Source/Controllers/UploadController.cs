@@ -23,7 +23,10 @@ public class UploadController : ControllerBase
     public async Task Post(IEnumerable<IFormFile> files, [FromQuery] string security)
     {
         if (_securityString == "" || security != _securityString)
+        {
+            _logger.LogWarning("Attempt to upload a file with security {Security}", security);
             return;
+        }
         
         foreach (var file in files)
         {
