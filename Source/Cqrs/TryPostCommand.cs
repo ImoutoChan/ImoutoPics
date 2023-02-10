@@ -20,6 +20,7 @@ internal class TryPostHandler : IRequestHandler<TryPost>
     private readonly IFileStorageRepository _fileStorageRepository;
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly ITelegramPreparer _telegramPreparer;
+    private readonly ILogger<TryPostHandler> _logger;
 
     public TryPostHandler(
         ITelegramBotClient telegramBotClient,
@@ -27,13 +28,15 @@ internal class TryPostHandler : IRequestHandler<TryPost>
         IFileStorageRepository fileStorageRepository,
         IPostInfoRepository postInfoRepository,
         IConfiguration configuration,
-        ITelegramPreparer telegramPreparer)
+        ITelegramPreparer telegramPreparer,
+        ILogger<TryPostHandler> logger)
     {
         _telegramBotClient = telegramBotClient;
         _mediaRepository = mediaRepository;
         _fileStorageRepository = fileStorageRepository;
         _postInfoRepository = postInfoRepository;
         _telegramPreparer = telegramPreparer;
+        _logger = logger;
         _postEveryHours = configuration.GetValue<int>("PostEveryHours");
         _niceHoursStart = configuration.GetValue<int>("NiceHoursStart");
         _niceHoursEnd = configuration.GetValue<int>("NiceHoursEnd");
@@ -70,13 +73,22 @@ internal class TryPostHandler : IRequestHandler<TryPost>
     private async Task PostNext(IReadOnlyList<Media> toPost, CancellationToken ct)
     {
         var toPostMediaData = toPost
-            .Select((x, i) =>
+            .Select(x =>
             {
-                var file = _fileStorageRepository.Get(x.Name);
-                var preparedFile = _telegramPreparer.Prepare(file.File, file.Size);
-                var name = new FileInfo(x.Name).Name;
-                return new InputMediaPhoto(new InputMedia(preparedFile, name));
+                try
+                {
+                    var file = _fileStorageRepository.Get(x.Name);
+                    var preparedFile = _telegramPreparer.Prepare(file.File, file.Size);
+                    var name = new FileInfo(x.Name).Name;
+                    return new InputMediaPhoto(new InputMedia(preparedFile, name));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Unable to post the image {x.Name}");
+                    return null;
+                }
             })
+            .Where(x => x != null)
             .OfType<IAlbumInputMedia>()
             .ToList();
 
