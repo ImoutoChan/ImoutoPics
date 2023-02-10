@@ -77,41 +77,61 @@ internal class TryPostHandler : IRequestHandler<TryPost>
             {
                 try
                 {
+                    var type = GetType(x.Name);
+                    
                     var file = _fileStorageRepository.Get(x.Name);
-                    var preparedFile = _telegramPreparer.Prepare(file.File, file.Size);
+                    
+                    var preparedFile = type == MediaType.Photo
+                        ? _telegramPreparer.Prepare(file.File, file.Size)
+                        : file.File;
+                    
                     var name = new FileInfo(x.Name).Name;
-                    return new InputMediaPhoto(new InputMedia(preparedFile, name));
+                    InputMediaPhoto? media = new InputMediaPhoto(new InputMedia(preparedFile, name));
+
+                    return (TgMedia: media, MediaMetadata: x);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Unable to post the image {x.Name}");
-                    return null;
+                    _logger.LogError(ex, "Unable to post the image {Name}", x.Name);
+                    return (TgMedia: (InputMediaPhoto?)null, MediaMetadata: x);
                 }
             })
-            .Where(x => x != null)
+            .ToList();
+
+        var album = toPostMediaData
+            .Where(x => x.TgMedia != null)
+            .Select(x => x.TgMedia)
             .OfType<IAlbumInputMedia>()
             .ToList();
 
         var messages = await _telegramBotClient.SendMediaGroupAsync(
             _targetChat, 
-            toPostMediaData, 
+            album, 
             cancellationToken: ct);
 
-        foreach (var albumInputMedia in toPostMediaData) 
+        foreach (var albumInputMedia in album)
             await albumInputMedia.Media.Content!.DisposeAsync();
 
-        for (var i = 0; i < toPost.Count; i++)
+        for (var i = 0; i < toPostMediaData.Count; i++)
         {
-            var post = toPost[i];
+            var post = toPostMediaData[i];
             var message = messages[i];
+            
+            if (post.TgMedia == null)
+                continue;
 
-            _mediaRepository.MarkAsPosted(post.Id, message.Chat.Id, message.MessageId);
+            _mediaRepository.MarkAsPosted(post.MediaMetadata.Id, message.Chat.Id, message.MessageId);
         }
 
         _postInfoRepository.SetPosted();
 
-        foreach (var media in toPost) 
-            _fileStorageRepository.Delete(media.Name);
+        foreach (var post in toPostMediaData)
+        {
+            if (post.TgMedia == null)
+                continue;
+            
+            _fileStorageRepository.Delete(post.MediaMetadata.Name);
+        }
     }
 
     private bool IsNiceHour()
@@ -119,4 +139,17 @@ internal class TryPostHandler : IRequestHandler<TryPost>
         var hourInMsc = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(3)).Hour;
         return hourInMsc >= _niceHoursStart && hourInMsc < _niceHoursEnd;
     }
+    
+    private static MediaType GetType(string path) =>
+        path.EndsWith(".mp4") || path.EndsWith(".webm") || path.EndsWith(".swf")
+            ? MediaType.Video
+            : MediaType.Photo;
+    
+    private enum MediaType
+    {
+        Unknown,
+        Photo,
+        Video
+    }
 }
+
