@@ -5,22 +5,21 @@ namespace ImoutoPicsBot.Data;
 
 internal class PostInfoRepository : IPostInfoRepository
 {
-    private readonly Func<ILiteDatabase> _getDatabase;
+    private readonly ILiteDatabase _database;
 
-    public PostInfoRepository(Func<ILiteDatabase> getDatabase) => _getDatabase = getDatabase;
-    
+    public PostInfoRepository(ILiteDatabase database) => _database = database;
+
+
     public DateTimeOffset GetLastPostOn()
     {
-        using var db = _getDatabase();
-        var collection = GetCollection(db);
+        var collection = GetCollection();
 
         return collection.Query().FirstOrDefault()?.LastPostedOn ?? DateTimeOffset.MinValue;
     }
 
     public void SetPosted()
     {
-        using var db = _getDatabase();
-        var collection = GetCollection(db);
+        var collection = GetCollection();
 
         var found = collection.Query().FirstOrDefault();
 
@@ -38,5 +37,5 @@ internal class PostInfoRepository : IPostInfoRepository
         }
     }
 
-    private static ILiteCollection<PostsInfo> GetCollection(ILiteDatabase db) => db.GetCollection<PostsInfo>("info");
+    private ILiteCollection<PostsInfo> GetCollection() => _database.GetCollection<PostsInfo>("info");
 }

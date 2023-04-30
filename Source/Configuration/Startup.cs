@@ -50,12 +50,6 @@ public class Startup
                 .ForJob(nameof(PostingJob))
                 .StartNow()
                 .WithSimpleSchedule(b => b.WithIntervalInSeconds(20).RepeatForever()));
-
-            // c.AddJob<PostWeeklyTopJob>(j => j.WithIdentity(nameof(PostWeeklyTopJob)));
-            // c.AddTrigger(t => t
-            //     .ForJob(nameof(PostWeeklyTopJob))
-            //     .StartNow()
-            //     .WithCronSchedule("0 00 17 ? * SUN"));
         });
 
         // data
@@ -63,7 +57,8 @@ public class Startup
         var file = new FileInfo(Path.Combine("idata", "media.db"));
         file.Directory?.Create();
 
-        services.AddTransient<Func<ILiteDatabase>>(x => () => new LiteDatabase(file.FullName));
+        var connectionString = $"Filename={file.FullName};Mode=Shared";
+        services.AddSingleton<ILiteDatabase>(x => new LiteDatabase(connectionString));
         services.AddTransient<IPostInfoRepository, PostInfoRepository>();
         services.AddTransient<IMediaRepository, MediaRepository>();
         services.AddTransient<IFileStorageRepository, FileStorageRepository>();

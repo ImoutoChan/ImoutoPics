@@ -5,30 +5,27 @@ namespace ImoutoPicsBot.Data;
 
 internal class MediaRepository : IMediaRepository
 {
-    private readonly Func<ILiteDatabase> _getDatabase;
+    private readonly ILiteDatabase _database;
 
-    public MediaRepository(Func<ILiteDatabase> getDatabase) => _getDatabase = getDatabase;
+    public MediaRepository(ILiteDatabase database) => _database = database;
 
     public IReadOnlyCollection<Media> GetNotPosted()
     {
-        using var db = _getDatabase();
-        var collection = GetCollection(db);
+        var collection = GetCollection();
 
         return collection.Query().Where(x => !x.IsPosted).ToList();
     }
 
     public Media? GetByName(string fullFileName)
     {
-        using var db = _getDatabase();
-        var collection = GetCollection(db);
+        var collection = GetCollection();
 
         return collection.Query().Where(x => x.Name == fullFileName).FirstOrDefault();
     }
 
     public int GetNotPostedCount()
     {
-        using var db = _getDatabase();
-        var collection = GetCollection(db);
+        var collection = GetCollection();
 
         return collection.Query().Where(x => !x.IsPosted).Count();
     }
@@ -46,8 +43,7 @@ internal class MediaRepository : IMediaRepository
             PostedOn = null
         };
 
-        using var db = _getDatabase();
-        var collection = GetCollection(db);
+        var collection = GetCollection();
 
         var existingMedia = collection.Query().Where(x => x.Md5 == md5).FirstOrDefault();
         if (existingMedia != null)
@@ -58,8 +54,7 @@ internal class MediaRepository : IMediaRepository
 
     public void MarkAsPosted(int id, long chatId, int messageId)
     {
-        using var db = _getDatabase();
-        var collection = GetCollection(db);
+        var collection = GetCollection();
 
         var item = collection.Query().Where(x => x.Id == id).FirstOrDefault();
         item.IsPosted = true;
@@ -69,5 +64,5 @@ internal class MediaRepository : IMediaRepository
         collection.Update(item);
     }
 
-    private static ILiteCollection<Media> GetCollection(ILiteDatabase db) => db.GetCollection<Media>("media");
+    private ILiteCollection<Media> GetCollection() => _database.GetCollection<Media>("media");
 }
