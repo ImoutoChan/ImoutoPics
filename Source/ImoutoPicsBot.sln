@@ -5,6 +5,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{B6F436D0-5A2A-4296-946A-1D9DF19CD93D}"
 	ProjectSection(SolutionItems) = preProject
 		..\.github\workflows\main.yml = ..\.github\workflows\main.yml
+		..\Deploy\docker-compose.yml = ..\Deploy\docker-compose.yml
 	EndProjectSection
 EndProject
 Global
