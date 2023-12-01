@@ -26,7 +26,7 @@ internal class ProcessTelegramUpdateCommandHandler : IRequestHandler<ProcessTele
         _postInfoRepository = postInfoRepository;
     }
 
-    public async Task<Unit> Handle(ProcessTelegramUpdateCommand command, CancellationToken ct)
+    public async Task Handle(ProcessTelegramUpdateCommand command, CancellationToken ct)
     {
         var update = command.Update;
 
@@ -36,7 +36,7 @@ internal class ProcessTelegramUpdateCommandHandler : IRequestHandler<ProcessTele
             var allowed = message.From!.Id == _moderator;
 
             if (!allowed)
-                return Unit.Value;
+                return;
 
             var count = _mediaRepository.GetNotPostedCount();
             var lastPostOn = _postInfoRepository.GetLastPostOn();
@@ -50,7 +50,5 @@ internal class ProcessTelegramUpdateCommandHandler : IRequestHandler<ProcessTele
                 """,
                 cancellationToken: ct);
         }
-
-        return Unit.Value;
     }
 }

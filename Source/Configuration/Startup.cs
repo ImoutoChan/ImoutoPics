@@ -1,3 +1,4 @@
+using System.Security.Cryptography.Xml;
 using ImoutoPicsBot.Data;
 using ImoutoPicsBot.ImageProcessing;
 using ImoutoPicsBot.QuartzJobs;
@@ -37,14 +38,12 @@ public class Startup
         services.AddMemoryCache();
 
         // mediator
-        services.AddMediatR(typeof(Startup));
+        services.AddMediatR(x => x.RegisterServicesFromAssemblyContaining<Startup>());
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
         // quartz
         services.AddQuartz(c =>
         {
-            c.UseMicrosoftDependencyInjectionJobFactory();
-
             c.AddJob<PostingJob>(j => j.WithIdentity(nameof(PostingJob)));
             c.AddTrigger(t => t
                 .ForJob(nameof(PostingJob))
@@ -53,7 +52,6 @@ public class Startup
         });
 
         // data
-
         var file = new FileInfo(Path.Combine("idata", "media.db"));
         file.Directory?.Create();
 

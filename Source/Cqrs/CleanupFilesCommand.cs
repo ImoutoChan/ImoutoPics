@@ -17,7 +17,7 @@ internal class CleanupFilesHandler : IRequestHandler<CleanupFiles>
         _fileStorageRepository = fileStorageRepository;
     }
 
-    public Task<Unit> Handle(CleanupFiles command, CancellationToken ct)
+    public Task Handle(CleanupFiles command, CancellationToken ct)
     {
         var stored = _fileStorageRepository.GetStored();
 
@@ -32,6 +32,6 @@ internal class CleanupFilesHandler : IRequestHandler<CleanupFiles>
                 _fileStorageRepository.Delete(storedFile);
         }
         
-        return Unit.Task;
+        return Task.CompletedTask;
     }
 }

@@ -43,7 +43,7 @@ internal class TryPostHandler : IRequestHandler<TryPost>
         _targetChat = configuration.GetRequiredValue<string>("TargetChat");
     }
 
-    public async Task<Unit> Handle(TryPost command, CancellationToken ct)
+    public async Task Handle(TryPost command, CancellationToken ct)
     {
         var count = _mediaRepository.GetNotPostedCount();
         var lastPostOn = _postInfoRepository.GetLastPostOn();
@@ -54,7 +54,7 @@ internal class TryPostHandler : IRequestHandler<TryPost>
             var toPost = _mediaRepository.GetNotPosted().Take(10).ToList();
             await PostNext(toPost, ct);
 
-            return Unit.Value;
+            return;
         }
 
         var timeToPost = now - lastPostOn > TimeSpan.FromHours(_postEveryHours);
@@ -63,15 +63,13 @@ internal class TryPostHandler : IRequestHandler<TryPost>
         {
             var toPost = _mediaRepository.GetNotPosted().Take(10).ToList();
             await PostNext(toPost, ct);
-
-            return Unit.Value;
         }
-        
-        return Unit.Value;
     }
 
     private async Task PostNext(IReadOnlyList<Media> toPost, CancellationToken ct)
     {
+        var toDispose = new List<Stream>();
+        
         var toPostMediaData = toPost
             .Select(x =>
             {
@@ -85,8 +83,10 @@ internal class TryPostHandler : IRequestHandler<TryPost>
                         ? _telegramPreparer.Prepare(file.File, file.Size)
                         : file.File;
                     
+                    toDispose.Add(preparedFile);
+                    
                     var name = new FileInfo(x.Name).Name;
-                    InputMediaPhoto? media = new InputMediaPhoto(new InputMedia(preparedFile, name));
+                    InputMediaPhoto? media = new InputMediaPhoto(new InputFileStream(preparedFile, name));
 
                     return (TgMedia: media, MediaMetadata: x);
                 }
@@ -109,8 +109,8 @@ internal class TryPostHandler : IRequestHandler<TryPost>
             album, 
             cancellationToken: ct);
 
-        foreach (var albumInputMedia in album)
-            await albumInputMedia.Media.Content!.DisposeAsync();
+        foreach (var x in toDispose)
+            await x.DisposeAsync();
 
         for (var i = 0; i < toPostMediaData.Count; i++)
         {
