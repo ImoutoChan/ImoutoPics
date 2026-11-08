@@ -4,3 +4,4 @@
 /Source/idata/*
 /Source/obj/*
 /Deploy/docker-compose.production.yml
+/Deploy/.env

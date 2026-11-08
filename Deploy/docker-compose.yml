@@ -1,15 +1,15 @@
-version: '3.3'
-
 services:
   imoutopics:
     restart: always
     image: imoutochan/imoutopics:latest
     networks:
       - customnetwork
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
     ports:
-      - "42427:8080"
+      - "127.0.0.1:42427:8080"
     volumes:
       - ./idata:/app/idata
       

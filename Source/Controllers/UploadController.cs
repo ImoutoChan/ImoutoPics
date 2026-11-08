@@ -24,7 +24,7 @@ public class UploadController : ControllerBase
     {
         if (_securityString == "" || security != _securityString)
         {
-            _logger.LogWarning("Attempt to upload a file with security {Security}", security);
+            _logger.LogWarning("Attempt to upload a file with an invalid security key");
             return;
         }
         

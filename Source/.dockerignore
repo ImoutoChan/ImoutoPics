@@ -1,0 +1,10 @@
+**/bin
+**/obj
+**/.vs
+**/.idea
+**/.git
+**/.env*
+**/*.user
+**/launchSettings.json
+**/appsettings.*.json*
+**/idata
